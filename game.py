@@ -84,38 +84,28 @@ answers = {"5 + 3": "8", "10 + 2": "12", "15 + 5": "20", "7 + 4": "11", "12 + 6"
 col_spin, col_ans = st.columns([1, 1])
 
 with col_spin:
-    if st.button("🎡 சக்கரத்தைச் சுழற்று!"):
-        with col_spin:
-    if st.button("🎡 சக்கரத்தைச் சுழற்று!"):
-        # சக்கரம் சுழல்வது போன்ற படம் (GIF)
-        wheel_url = "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHJueXZueXZueXZueXZueXZueXZueXZueXZueXZueXZueXZueZCZpZD1jdXN0b20mY3Q9cw/3o7TKMGpxxcaKAXI0o/giphy.gif"
-        st.image(wheel_url, width=200)
-        
-        with st.spinner("சக்கரம் சுழல்கிறது..."):
-            import time
-            time.sleep(2) # 2 வினாடிகள் சக்கரம் சுழலும்
-            selected_q = random.choice(questions)
-            st.session_state['current_q'] = selected_q
-            st.rerun() # கேள்வி வந்தவுடன் படத்தை மறைக்க உதவும்
-        with st.spinner("சக்கரம் சுழல்கிறது..."):
-            import time
-            time.sleep(1) # சுழல்வது போன்ற உணர்வுக்காக ஒரு வினாடி காத்திருப்பு
-            selected_q = random.choice(questions)
-            st.session_state['current_q'] = selected_q
-            st.info(f"உங்களுக்கான வினா: *{selected_q}*")
+        if st.button("🎡 சக்கரத்தைச் சுழற்று!"):
+            # சக்கரம் சுழல்வது போன்ற படம்
+            wheel_url = "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHJueXZueXZueXZueXZueXZueXZueXZueXZueXZueXZueXZueZCZpZD1jdXN0b20mY3Q9cw/3o7TKMGpxxcaKAXI0o/giphy.gif"
+            st.image(wheel_url, width=200)
+            
+            with st.spinner("சக்கரம் சுழல்கிறது..."):
+                import time
+                time.sleep(2) 
+                selected_q = random.choice(questions)
+                st.session_state['current_q'] = selected_q
+                st.rerun() 
 
-with col_ans:
-    if 'current_q' in st.session_state:
-        user_ans = st.text_input("உங்கள் விடையைத் தட்டச்சு செய்க:")
-        if st.button("விடையைச் சரிபார்"):
-            correct_ans = answers[st.session_state['current_q']]
-            if user_ans == correct_ans:
-                st.balloons()
-                st.success("அற்புதம்! சரியான விடை!")
-            else:
-                st.error(f"தவறு! சரியான விடை: {correct_ans}")
+    with col_ans:
+        if 'current_q' in st.session_state:
+            user_ans = st.text_input("உங்கள் விடையைத் தட்டச்சு செய்க:")
+            if st.button("விடையைச் சரிபார்"):
+                correct_ans = answers[st.session_state['current_q']]
+                if user_ans == correct_ans:
+                    st.balloons()
+                    st.success("அற்புதம்! சரியான விடை!")
+                else:
+                    st.error(f"தவறு! சரியான விடை: {correct_ans}")
 
 st.markdown("</div>", unsafe_allow_html=True)
-
-
 
