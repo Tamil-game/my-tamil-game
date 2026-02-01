@@ -1,5 +1,5 @@
 import streamlit as st
-
+import random
 # பக்கத்தின் அமைப்பு
 st.set_page_config(page_title="மெகா கல்வி விளையாட்டு", page_icon="🎮", layout="wide")
 
@@ -104,3 +104,4 @@ with col_ans:
                 st.error(f"தவறு! சரியான விடை: {correct_ans}")
 
 st.markdown("</div>", unsafe_allow_html=True)
+
