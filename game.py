@@ -84,17 +84,19 @@ answers = {"5 + 3": "8", "10 + 2": "12", "15 + 5": "20", "7 + 4": "11", "12 + 6"
 col_spin, col_ans = st.columns([1, 1])
 
 with col_spin:
-    if st.button("🎡 சக்கரத்தைச் சுழற்று!"):
-        # சக்கரம் சுழல்வது போன்ற படம்
-        wheel_url = "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHJueXZueXZueXZueXZueXZueXZueXZueXZueXZueXZueXZueZCZpZD1jdXN0b20mY3Q9cw/3o7TKMGpxxcaKAXI0o/giphy.gif"
-        st.image(wheel_url, width=200)
-        
-        with st.spinner("சக்கரம் சுழல்கிறது..."):
+        if st.button("🎡 சக்கரத்தைச் சுழற்று!"):
+            # சக்கரம் சுழல்வது போன்ற படம் (இது மிகவும் நம்பகமான லிங்க்)
+            wheel_gif = "https://raw.githubusercontent.com/dataprofessor/streamlit_app/master/minimal_flux_app/spinner.gif"
+            st.image(wheel_gif, width=150)
+            
+            st.write("✨ சக்கரம் சுழன்று கொண்டிருக்கிறது...")
+            
             import time
-            time.sleep(2) 
+            time.sleep(3) # 3 வினாடிகள் சக்கரம் ஓடும்
+            
             selected_q = random.choice(questions)
             st.session_state['current_q'] = selected_q
-            st.rerun() 
+            st.rerun()
 
 with col_ans:
     if 'current_q' in st.session_state:
@@ -109,3 +111,4 @@ with col_ans:
                 st.error(f"தவறு! சரியான விடை: {correct_ans}")
 
 st.markdown("</div>", unsafe_allow_html=True)
+
