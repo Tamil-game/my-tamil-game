@@ -85,7 +85,18 @@ col_spin, col_ans = st.columns([1, 1])
 
 with col_spin:
     if st.button("🎡 சக்கரத்தைச் சுழற்று!"):
-        st.markdown
+        with col_spin:
+    if st.button("🎡 சக்கரத்தைச் சுழற்று!"):
+        # சக்கரம் சுழல்வது போன்ற படம் (GIF)
+        wheel_url = "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHJueXZueXZueXZueXZueXZueXZueXZueXZueXZueXZueXZueZCZpZD1jdXN0b20mY3Q9cw/3o7TKMGpxxcaKAXI0o/giphy.gif"
+        st.image(wheel_url, width=200)
+        
+        with st.spinner("சக்கரம் சுழல்கிறது..."):
+            import time
+            time.sleep(2) # 2 வினாடிகள் சக்கரம் சுழலும்
+            selected_q = random.choice(questions)
+            st.session_state['current_q'] = selected_q
+            st.rerun() # கேள்வி வந்தவுடன் படத்தை மறைக்க உதவும்
         with st.spinner("சக்கரம் சுழல்கிறது..."):
             import time
             time.sleep(1) # சுழல்வது போன்ற உணர்வுக்காக ஒரு வினாடி காத்திருப்பு
@@ -105,5 +116,6 @@ with col_ans:
                 st.error(f"தவறு! சரியான விடை: {correct_ans}")
 
 st.markdown("</div>", unsafe_allow_html=True)
+
 
 
