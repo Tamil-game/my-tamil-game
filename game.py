@@ -83,30 +83,22 @@ answers = {"5 + 3": "8", "10 + 2": "12", "15 + 5": "20", "7 + 4": "11", "12 + 6"
 
 col_spin, col_ans = st.columns([1, 1])
 
-col_spin, col_ans = st.columns([1, 1])
-
 with col_spin:
     if st.button("🎡 சக்கரத்தைச் சுழற்று!"):
-        # ஒரு அழகான லோடிங் அனிமேஷன் (இதுதான் சக்கரம் சுழலும் உணர்வைத் தரும்)
-        with st.status("🎡 சக்கரம் அதிவேகமாகச் சுழல்கிறது...", expanded=True) as status:
+        # இதுதான் சக்கரம் சுழலும் மேஜிக்
+        with st.spinner("🎡 சக்கரம் சுழல்கிறது..."):
             import time
-            time.sleep(3) # 3 வினாடிகள் சக்கரம் சுழலும் நேரம்
-            
-            selected_q = random.choice(questions)
-            st.session_state['current_q'] = selected_q
-            status.update(label="✅ சக்கரம் நின்றுவிட்டது!", state="complete", expanded=False)
+            time.sleep(3) 
+            st.session_state['current_q'] = random.choice(list(answers.keys()))
         st.rerun()
 
 with col_ans:
     if 'current_q' in st.session_state:
-        st.info(f"உங்களுக்கான வினா: *{st.session_state['current_q']}*")
-        user_ans = st.text_input("உங்கள் விடையைத் தட்டச்சு செய்க:")
-        if st.button("விடையைச் சரிபார்"):
-            correct_ans = answers[st.session_state['current_q']]
-            if user_ans == correct_ans:
+        st.info(f"வினா: *{st.session_state['current_q']}*")
+        user_ans = st.text_input("பதில்:")
+        if st.button("சரிபார்"):
+            if user_ans == answers[st.session_state['current_q']]:
                 st.balloons()
-                st.success("அற்புதம்! சரியான விடை!")
+                st.success("சரியான விடை! 🥳")
             else:
-                st.error(f"தவறு! சரியான விடை: {correct_ans}")
-
-st.markdown("</div>", unsafe_allow_html=True)
+                st.error(f"தவறு! விடை: {answers[st.session_state['current_q']]}")
