@@ -73,58 +73,53 @@ if st.button("விளையாட்டு 2 சரிபார்"):
     else:
         st.warning(f"விளையாட்டு 2 மதிப்பெண்: {s2}/3")
 
-st.markdown("</div>", unsafe_allow_html=True)
-# --- விளையாட்டு 3: சுழற்சக்கர கணிதம் ---
-st.header("🎡 விளையாட்டு 3: கூட்டல் சுழற்சக்கரம்")
-st.markdown("<div class='game-card'>", unsafe_allow_html=True)
+st.title("🎡 வினாக்கள் அடங்கிய வண்ணச் சக்கரம்")
 
-# வினாக்கள் மற்றும் விடைகள் (Dictionary வடிவில்)
-questions = ["5 + 3", "10 + 2", "15 + 5", "7 + 4", "12 + 6", "9 + 9", "20 + 10", "8 + 6"]
-answers = {"5 + 3": "8", "10 + 2": "12", "15 + 5": "20", "7 + 4": "11", "12 + 6": "18", "9 + 9": "18", "20 + 10": "30", "8 + 6": "14"}
-
-col_spin, col_ans = st.columns([1, 1])
-
-st.title("🎡 வினாக்கள் அடங்கிய சுழற்சக்கரம்")
-
-# 1. கேள்விகளின் பட்டியல்
-options = ["5+3", "10+2", "15+5", "7+4", "12+6", "9+9"]
+# கேள்விகளின் பட்டியல்
+options = ["5 + 3", "10 + 2", "15 + 5", "7 + 4", "12 + 6", "9 + 9", "20 + 10", "8 + 6"]
 
 if st.button("🎡 சக்கரத்தைச் சுழற்று!"):
     placeholder = st.empty()
     
-    # 2. சக்கரம் சுழலும் மேஜிக் (10 முறை வினாக்கள் மாறும்)
-    for i in range(10):
+    # 1. சக்கரம் சுழலும் உணர்வைத் தரும் அனிமேஷன் (15 முறை மாறும்)
+    for i in range(15):
         pick = random.choice(options)
+        # வெவ்வேறு நிறங்கள் மாறி மாறி வரும்
+        colors = ["#FF4B4B", "#1C83E1", "#FFD700", "#7D3Cff", "#00C0F2"]
+        bg_color = random.choice(colors)
+        
         placeholder.markdown(f"""
             <div style="display: flex; justify-content: center; align-items: center; 
-                        background-color: #FF4B4B; color: white; border-radius: 50%; 
-                        width: 200px; height: 200px; border: 10px solid #FFD700;
-                        font-size: 30px; font-weight: bold;">
+                        background-color: {bg_color}; color: white; border-radius: 50%; 
+                        width: 250px; height: 250px; border: 10px solid white;
+                        font-size: 35px; font-weight: bold; margin: auto;
+                        box-shadow: 0px 0px 15px rgba(0,0,0,0.3); transform: rotate({i*24}deg);">
                 {pick}
             </div>
         """, unsafe_allow_html=True)
-        time.sleep(0.1)
+        time.sleep(0.1) # சுழலும் வேகம்
     
-    # 3. கடைசியாக ஒரு கேள்வியில் சக்கரம் நிற்கும்
+    # 2. கடைசியாக ஒரு கேள்வியில் சக்கரம் நின்று பச்சை நிறமாக மாறும்
     final_q = random.choice(options)
     placeholder.markdown(f"""
         <div style="display: flex; justify-content: center; align-items: center; 
                     background-color: #2E7D32; color: white; border-radius: 50%; 
-                    width: 200px; height: 200px; border: 10px solid #FFD700;
-                    font-size: 35px; font-weight: bold; box-shadow: 0px 0px 20px gold;">
+                    width: 250px; height: 250px; border: 10px solid gold;
+                    font-size: 40px; font-weight: bold; margin: auto;
+                    box-shadow: 0px 0px 25px gold;">
             {final_q}
         </div>
     """, unsafe_allow_html=True)
     st.session_state['current_q'] = final_q
 
-# 4. பதில் சொல்லும் பெட்டி
+# 3. பதில் சொல்லும் பகுதி
 if 'current_q' in st.session_state:
-    st.write(f"### கேள்வி: {st.session_state['current_q']}")
-    user_ans = st.text_input("உங்கள் விடை:")
+    st.write(f"### 🎯 உங்களுக்கான வினா: {st.session_state['current_q']}")
+    user_ans = st.text_input("பதிலை இங்கே எழுதவும்:")
     if st.button("சரிபார்"):
-        correct_ans = answers[st.session_state['current_q']]
+        correct_ans = answers.get(st.session_state['current_q'])
         if user_ans == correct_ans:
             st.balloons()
-            st.success("அற்புதம்! சரியான விடை!")
+            st.success("வெற்றி! சரியான விடை!")
         else:
-            st.error(f"தவறு! விடை: {correct_ans}")
+            st.error(f"தவறு! சரியான விடை: {correct_ans}")
