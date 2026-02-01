@@ -1,5 +1,6 @@
 import streamlit as st
 import random
+import time
 # பக்கத்தின் அமைப்பு
 st.set_page_config(page_title="மெகா கல்வி விளையாட்டு", page_icon="🎮", layout="wide")
 
@@ -83,22 +84,47 @@ answers = {"5 + 3": "8", "10 + 2": "12", "15 + 5": "20", "7 + 4": "11", "12 + 6"
 
 col_spin, col_ans = st.columns([1, 1])
 
-with col_spin:
-    if st.button("🎡 சக்கரத்தைச் சுழற்று!"):
-        # இதுதான் சக்கரம் சுழலும் மேஜிக்
-        with st.spinner("🎡 சக்கரம் சுழல்கிறது..."):
-            import time
-            time.sleep(3) 
-            st.session_state['current_q'] = random.choice(list(answers.keys()))
-        st.rerun()
+st.title("🎡 வினாக்கள் அடங்கிய சுழற்சக்கரம்")
 
-with col_ans:
-    if 'current_q' in st.session_state:
-        st.info(f"வினா: *{st.session_state['current_q']}*")
-        user_ans = st.text_input("பதில்:")
-        if st.button("சரிபார்"):
-            if user_ans == answers[st.session_state['current_q']]:
-                st.balloons()
-                st.success("சரியான விடை! 🥳")
-            else:
-                st.error(f"தவறு! விடை: {answers[st.session_state['current_q']]}")
+# 1. கேள்விகளின் பட்டியல்
+options = ["5+3", "10+2", "15+5", "7+4", "12+6", "9+9"]
+
+if st.button("🎡 சக்கரத்தைச் சுழற்று!"):
+    placeholder = st.empty()
+    
+    # 2. சக்கரம் சுழலும் மேஜிக் (10 முறை வினாக்கள் மாறும்)
+    for i in range(10):
+        pick = random.choice(options)
+        placeholder.markdown(f"""
+            <div style="display: flex; justify-content: center; align-items: center; 
+                        background-color: #FF4B4B; color: white; border-radius: 50%; 
+                        width: 200px; height: 200px; border: 10px solid #FFD700;
+                        font-size: 30px; font-weight: bold;">
+                {pick}
+            </div>
+        """, unsafe_allow_html=True)
+        time.sleep(0.1)
+    
+    # 3. கடைசியாக ஒரு கேள்வியில் சக்கரம் நிற்கும்
+    final_q = random.choice(options)
+    placeholder.markdown(f"""
+        <div style="display: flex; justify-content: center; align-items: center; 
+                    background-color: #2E7D32; color: white; border-radius: 50%; 
+                    width: 200px; height: 200px; border: 10px solid #FFD700;
+                    font-size: 35px; font-weight: bold; box-shadow: 0px 0px 20px gold;">
+            {final_q}
+        </div>
+    """, unsafe_allow_html=True)
+    st.session_state['current_q'] = final_q
+
+# 4. பதில் சொல்லும் பெட்டி
+if 'current_q' in st.session_state:
+    st.write(f"### கேள்வி: {st.session_state['current_q']}")
+    user_ans = st.text_input("உங்கள் விடை:")
+    if st.button("சரிபார்"):
+        correct_ans = answers[st.session_state['current_q']]
+        if user_ans == correct_ans:
+            st.balloons()
+            st.success("அற்புதம்! சரியான விடை!")
+        else:
+            st.error(f"தவறு! விடை: {correct_ans}")
