@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Quiz - Final Version</title>
+    <title>Smart Quiz - கல்வி விளையாட்டுகள்</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -78,6 +78,8 @@
             .options-wrapper { flex-direction: column; align-items: center; }
             .common-img-box { order: -1; margin-bottom: 15px; }
         }
+        
+        .no-questions-msg { background: white; padding: 40px; border-radius: 20px; text-align: center; font-weight: bold; color: #636e72; }
     </style>
 </head>
 <body>
@@ -118,32 +120,52 @@
 
     let quizData = [];
     let userAnswers = {};
-    const subjectColors = { "தமிழ்": "#e67e22", "கணிதம்": "#0984e3", "சுற்றாடல்": "#27ae60", "சமயம்": "#8e44ad", "ஆங்கிலம்": "#fd79a8", "புலமைப்பரிசில்": "#f1c40f" };
+    const subjectColors = { 
+        "தமிழ்": "#e67e22", 
+        "கணிதம்": "#0984e3", 
+        "சுற்றாடல்": "#27ae60", 
+        "சமயம்": "#8e44ad", 
+        "ஆங்கிலம்": "#fd79a8", 
+        "பொது அறிவு": "#2d3436",
+        "புலமைப்பரிசில்": "#f1c40f" 
+    };
 
-    // பக்கம் ஆரம்பிக்கும்போது இயங்கும்
     async function loadQuiz() {
-        // 1. வரலாற்றை திரையில் காட்டுதல்
         renderHistoryOnly();
         
-        // 2. கடைசியாகப் பெற்ற புள்ளியை திரையில் நிலைநிறுத்துதல்
-        let history = JSON.parse(localStorage.getItem('quiz_history')) || [];
-        if (history.length > 0) {
-            const lastGame = history[history.length - 1];
-            document.getElementById('result-display').style.display = 'block';
-            document.getElementById('final-score-text').innerText = `${lastGame.score} / ${lastGame.total}`;
-        }
+        // 1. URL Parameters -இல் இருந்து தகவல்களைப் பெறுதல்
+        const urlParams = new URLSearchParams(window.location.search);
+        const selectedGrade = urlParams.get('grade');    // எ.கா: 1
+        const selectedSubject = urlParams.get('subject'); // எ.கா: தமிழ்
+        const selectedDate = urlParams.get('date');       // எ.கா: 2026-03-12
 
-        // 3. வினாக்களை Supabase இலிருந்து பெறுதல்
-        const { data } = await _supabase.from('questions').select('*').order('order_index', { ascending: true });
-        if (data && data.length > 0) {
-            quizData = data;
-            document.getElementById('display-subject').innerText = data[0].subject_name;
-            document.getElementById('display-grade').innerText = "தரம் " + data[0].grade;
-            document.getElementById('display-date').innerText = new Date().toLocaleDateString('ta-IN');
-            document.documentElement.style.setProperty('--theme-color', subjectColors[data[0].subject_name] || "#3498db");
-            document.getElementById('quiz-header').style.display = 'block';
-            document.getElementById('submit-btn').style.display = 'inline-block';
-            renderQuestions();
+        // 2. Supabase இலிருந்து வினாக்களைப் பெற்று வடிகட்டுதல் (Filter)
+        const { data, error } = await _supabase.from('questions').select('*').order('order_index', { ascending: true });
+        
+        if (data) {
+            // இங்கே தரம், பாடம் மற்றும் திகதி ஆகிய மூன்றையும் வைத்து வடிகட்டுகிறோம்
+            quizData = data.filter(q => 
+                q.grade == selectedGrade && 
+                q.subject_name == selectedSubject && 
+                q.date_assigned == selectedDate // உங்கள் Supabase அட்டவணையில் 'date_assigned' என்ற காலம் (Column) இருப்பதாகக் கருதுகிறேன்
+            );
+
+            if (quizData.length > 0) {
+                // Header தகவல்களை அமைத்தல்
+                document.getElementById('display-subject').innerText = selectedSubject;
+                document.getElementById('display-grade').innerText = "தரம் " + selectedGrade;
+                document.getElementById('display-date').innerText = selectedDate;
+                
+                // Theme Color அமைத்தல்
+                const themeCol = subjectColors[selectedSubject] || "#3498db";
+                document.documentElement.style.setProperty('--theme-color', themeCol);
+                
+                document.getElementById('quiz-header').style.display = 'block';
+                document.getElementById('submit-btn').style.display = 'inline-block';
+                renderQuestions();
+            } else {
+                document.getElementById('quiz-list-container').innerHTML = `<div class="no-questions-msg">மன்னிக்கவும்! இந்தத் திகதிக்குரிய வினாக்கள் இன்னும் இணைக்கப்படவில்லை.</div>`;
+            }
         }
     }
 
@@ -225,7 +247,6 @@
         const container = document.getElementById('history-list-container');
         container.innerHTML = '';
         
-        // கடைசி 5 ஆட்டங்களை மட்டும் தலைகீழாக (சமீபத்தியது முதலில்) காட்டுதல்
         [...history].reverse().slice(0, 5).forEach((item, index) => {
             const div = document.createElement('div');
             div.className = 'score-item';
