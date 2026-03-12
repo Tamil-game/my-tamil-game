@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>மாணவர் விளையாட்டுப் பக்கம்</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root { --primary: #27ae60; --bg: #f4f7f6; --text: #2c3e50; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); margin: 0; touch-action: none; overflow-x: hidden; }
+        
+        /* தலைப்பு பகுதி */
+        .game-header { text-align: center; padding: 20px; background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.1); border-bottom: 4px solid var(--primary); }
+        .lesson-title { font-size: 24px; font-weight: bold; color: var(--primary); margin: 0; white-space: pre-wrap; }
+        
+        /* பாடம் மற்றும் தரம் காட்டும் பகுதி */
+        .info-bar { display: flex; justify-content: space-between; max-width: 900px; margin: 15px auto 0; font-weight: bold; font-size: 18px; color: #555; padding: 0 20px; }
+        .info-bar span { background: #e8f5e9; padding: 5px 15px; border-radius: 20px; border: 1px solid var(--primary); }
+
+        /* விளையாட்டு பகுதி */
+        .game-container { position: relative; max-width: 900px; margin: 20px auto; display: flex; justify-content: space-between; padding: 20px; min-height: 500px; }
+        .column { display: flex; flex-direction: column; gap: 20px; z-index: 2; width: 40%; }
+        
+        .item { background: white; padding: 15px; border-radius: 15px; border: 2px solid #ddd; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; cursor: pointer; position: relative; min-height: 110px; transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .item:hover { transform: scale(1.02); border-color: var(--primary); }
+        .item img { width: 90px; height: 90px; object-fit: contain; margin-bottom: 8px; border-radius: 8px; }
+        .item span { font-size: 16px; font-weight: 600; color: var(--text); }
+
+        /* புள்ளிகள் (Dots) */
+        .dot { width: 16px; height: 16px; background: #bdc3c7; border-radius: 50%; position: absolute; top: 50%; transform: translateY(-50%); border: 2px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.2); }
+        .left-dot { right: -28px; } 
+        .right-dot { left: -28px; }
+
+        canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
+        
+        /* நிலைகள் */
+        .selected { border-color: var(--primary); background: #e8f5e9; box-shadow: 0 0 15px rgba(39, 174, 96, 0.2); }
+        .correct { border-color: #2ecc71; background: #d4edda; pointer-events: none; opacity: 0.9; }
+        .wrong { border-color: #e74c3c; animation: shake 0.5s; }
+
+        @keyframes shake { 0%, 100% {transform: translateX(0);} 25% {transform: translateX(-5px);} 75% {transform: translateX(5px);} }
+    </style>
+</head>
+<body>
+
+<div class="game-header">
+    <h1 id="main-title" class="lesson-title">லோடிங்...</h1>
+    <div class="info-bar">
+        <span id="subject-display">பாடம்</span>
+        <span id="grade-display">தரம்</span>
+    </div>
+</div>
+
+<div class="game-container" id="game-area">
+    <canvas id="lineCanvas"></canvas>
+    <div class="column" id="left-col"></div>
+    <div class="column" id="right-col"></div>
+</div>
+
+<script>
+    // Supabase இணைப்பு
+    const SUPABASE_URL = 'https://uftbbxskstvyzlzxglxp.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_--lzHe2iT_r6fa_UZ5VakA_dFmkVF9e';
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let questions = [], matches = [], selectedLeft = null;
+    const canvas = document.getElementById('lineCanvas'), ctx = canvas.getContext('2d');
+
+    async function loadGameData() {
+        // 'matching_questions_v3' டேபிளில் இருந்து கடைசியாகச் சேமிக்கப்பட்ட தரவை எடுத்தல்
+        const { data, error } = await _supabase
+            .from('matching_questions_v3')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(1);
+
+        if (error || !data.length) {
+            document.getElementById('main-title').innerText = "தரவுகள் இல்லை!";
+            return;
+        }
+
+        const g = data[0];
+        // தலைப்புகளைக் காட்டுதல்
+        document.getElementById('main-title').innerText = g.lesson_title || "தொடர்புபடுத்துக";
+        document.getElementById('subject-display').innerText = g.subject_name || "பாடம்";
+        document.getElementById('grade-display').innerText = g.grade_text || "தரம்";
+
+        // வினா-விடைகளைத் தயார் செய்தல்
+        for(let i=1; i<=6; i++) {
+            if(g[`pair_${i}_left_text`] || g[`pair_${i}_left_img`]) {
+                questions.push({
+                    id: i,
+                    lt: g[`pair_${i}_left_text`],
+                    li: g[`pair_${i}_left_img`],
+                    rt: g[`pair_${i}_right_text`],
+                    ri: g[`pair_${i}_right_img`]
+                });
+            }
+        }
+        renderGame();
+    }
+
+    function renderGame() {
+        const lc = document.getElementById('left-col'), rc = document.getElementById('right-col');
+        
+        // இடது பக்கம் (வினாக்கள் - அட்மின் வரிசைப்படி)
+        questions.forEach(q => {
+            lc.innerHTML += `
+                <div class="item" onclick="selectLeft(this, ${q.id})" id="l-${q.id}">
+                    ${q.li ? `<img src="${q.li}">` : ''}
+                    <span>${q.lt || ''}</span>
+                    <div class="dot left-dot"></div>
+                </div>`;
+        });
+
+        // வலது பக்கம் (விடைகள் - குழப்பப்பட்ட வரிசையில்)
+        [...questions].sort(() => Math.random() - 0.5).forEach(q => {
+            rc.innerHTML += `
+                <div class="item" onclick="selectRight(this, ${q.id})" id="r-${q.id}">
+                    <div class="dot right-dot"></div>
+                    ${q.ri ? `<img src="${q.ri}">` : ''}
+                    <span>${q.rt || ''}</span>
+                </div>`;
+        });
+
+        setTimeout(resizeCanvas, 500);
+    }
+
+    function resizeCanvas() {
+        const area = document.getElementById('game-area');
+        canvas.width = area.offsetWidth;
+        canvas.height = area.offsetHeight;
+        drawLines();
+    }
+
+    function selectLeft(el, id) {
+        if(el.classList.contains('correct')) return;
+        document.querySelectorAll('#left-col .item').forEach(i => i.classList.remove('selected'));
+        el.classList.add('selected');
+        selectedLeft = { el, id };
+    }
+
+    function selectRight(el, id) {
+        if(!selectedLeft || el.classList.contains('correct')) return;
+
+        if(selectedLeft.id === id) {
+            // சரியான விடை
+            el.classList.add('correct');
+            selectedLeft.el.classList.add('correct');
+            matches.push({ from: selectedLeft.el, to: el });
+            drawLines();
+            selectedLeft = null;
+            
+            if(matches.length === questions.length) {
+                setTimeout(() => alert("மிகச்சிறப்பு! அனைத்து வினாக்களுக்கும் சரியாகப் பதிலளித்துவிட்டீர்கள்."), 500);
+            }
+        } else {
+            // தவறான விடை
+            el.classList.add('wrong');
+            setTimeout(() => el.classList.remove('wrong'), 500);
+        }
+    }
+
+    function drawLines() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.strokeStyle = '#27ae60';
+        ctx.lineWidth = 4;
+        ctx.lineCap = 'round';
+        
+        const area = document.getElementById('game-area').getBoundingClientRect();
+        
+        matches.forEach(m => {
+            const f = m.from.getBoundingClientRect();
+            const t = m.to.getBoundingClientRect();
+            
+            ctx.beginPath();
+            ctx.moveTo(f.right - area.left, (f.top + f.height/2) - area.top);
+            ctx.lineTo(t.left - area.left, (t.top + t.height/2) - area.top);
+            ctx.stroke();
+        });
+    }
+
+    window.onresize = resizeCanvas;
+    loadGameData();
+</script>
+</body>
+</html>

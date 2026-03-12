@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Quiz - Final Version</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { 
+            --theme-color: #3498db; 
+            --bg-color: #f4f7f9;
+            --card-bg: #ffffff;
+            --text-main: #2d3436;
+            --success: #00b894;
+            --error: #d63031;
+        }
+        
+        body { 
+            font-family: 'Poppins', 'Segoe UI', sans-serif; 
+            background-color: var(--bg-color);
+            margin: 0; padding: 15px;
+            display: flex; flex-direction: column; align-items: center;
+        }
+
+        .game-container { max-width: 850px; width: 100%; }
+
+        .premium-header {
+            background: var(--card-bg); padding: 25px; border-radius: 24px;
+            margin-bottom: 30px; position: relative; text-align: center;
+            border-bottom: 6px solid var(--theme-color);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+        }
+        .date-badge { position: absolute; top: 15px; right: 20px; background: var(--theme-color); color: white; padding: 5px 12px; border-radius: 10px; font-size: 13px; font-weight: bold; }
+
+        .question-card { 
+            background: white; padding: 25px; border-radius: 24px; 
+            box-shadow: 0 8px 20px rgba(0,0,0,0.03); margin-bottom: 25px; 
+            border: 2px solid #eef0f2; transition: 0.3s;
+        }
+        
+        .unanswered { border-color: var(--error) !important; background-color: #fff9f9; }
+
+        .question-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 15px; margin-bottom: 20px; }
+        .q-image-main { width: 100px; height: 100px; border-radius: 18px; object-fit: cover; flex-shrink: 0; }
+
+        .options-wrapper { display: flex; gap: 15px; align-items: flex-start; }
+        .options-grid { flex: 1; display: grid; gap: 10px; }
+        .option-btn { background: #fff; border: 2px solid #f1f2f6; padding: 12px; border-radius: 18px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 16px; min-height: 85px; transition: 0.3s; width: 100%; text-align: left; }
+        .option-btn.selected { border-color: var(--theme-color); background: #f7f6ff; border-width: 3px; }
+        .option-btn img { width: 70px; height: 70px; border-radius: 10px; object-fit: cover; }
+
+        .common-img-box { width: 200px; height: 200px; display: flex; align-items: center; justify-content: center; background: #fdfdfd; border: 2px dashed #e1e1e1; border-radius: 20px; flex-shrink: 0; }
+        .common-img-box img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 12px; }
+
+        .submit-all-btn { background: var(--theme-color); color: white; border: none; padding: 18px 60px; border-radius: 20px; font-size: 22px; font-weight: bold; cursor: pointer; margin: 40px 0; box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
+
+        #result-display { 
+            display: none; background: white; padding: 35px; border-radius: 30px; 
+            border: 4px solid var(--success); box-shadow: 0 15px 40px rgba(0,0,0,0.1);
+            width: 100%; box-sizing: border-box; margin-top: 20px;
+        }
+
+        .result-flex { display: flex; gap: 30px; align-items: center; justify-content: space-around; }
+        .current-score-section { flex: 1; text-align: center; }
+        .history-section { flex: 1; background: #f9fbfc; padding: 20px; border-radius: 20px; border-left: 5px solid var(--theme-color); min-width: 250px; }
+
+        .history-title { font-size: 18px; font-weight: bold; margin-bottom: 15px; color: var(--text-main); display: block; text-align: center; }
+        .score-item { display: flex; justify-content: space-between; padding: 10px; background: white; margin-bottom: 8px; border-radius: 10px; font-weight: bold; border: 1px solid #eee; }
+
+        .final-score-val { font-size: 60px; font-weight: 900; color: var(--success); margin: 10px 0; }
+
+        .correct-ans { background: #e6fff4 !important; border-color: var(--success) !important; }
+        .wrong-ans { background: #fff2f2 !important; border-color: var(--error) !important; }
+
+        @media (max-width: 750px) {
+            .result-flex { flex-direction: column; }
+            .options-wrapper { flex-direction: column; align-items: center; }
+            .common-img-box { order: -1; margin-bottom: 15px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="game-container">
+    <div class="premium-header" id="quiz-header" style="display:none;">
+        <div class="date-badge" id="display-date">திகதி</div>
+        <h1 class="subject-title" id="display-subject">பாடம்</h1>
+        <div id="display-grade" style="font-weight: 600; color: #636e72; margin-top: 5px;">தரம்</div>
+    </div>
+
+    <div id="quiz-list-container"></div>
+
+    <div style="text-align: center;">
+        <button id="submit-btn" class="submit-all-btn" onclick="evaluateQuiz()" style="display:none;">சமர்ப்பிக்கவும் <i class="fa-solid fa-paper-plane"></i></button>
+    </div>
+
+    <div id="result-display">
+        <div class="result-flex">
+            <div class="current-score-section">
+                <i class="fa-solid fa-trophy" style="font-size: 50px; color: #f1c40f;"></i>
+                <h2 style="margin: 10px 0;">புள்ளிகள்</h2>
+                <div class="final-score-val" id="final-score-text">0/0</div>
+                <button id="replay-btn" onclick="resetQuiz()" style="background:var(--theme-color); color:white; border:none; padding:12px 25px; border-radius:12px; cursor:pointer; font-weight:bold; margin-top: 10px;">மீண்டும் விளையாடு</button>
+            </div>
+            <div class="history-section">
+                <span class="history-title"><i class="fa-solid fa-clock-rotate-left"></i> இறுதி 5 ஆட்டங்கள்</span>
+                <div id="history-list-container"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const SUPABASE_URL = 'https://uftbbxskstvyzlzxglxp.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_--lzHe2iT_r6fa_UZ5VakA_dFmkVF9e';
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let quizData = [];
+    let userAnswers = {};
+    const subjectColors = { "தமிழ்": "#e67e22", "கணிதம்": "#0984e3", "சுற்றாடல்": "#27ae60", "சமயம்": "#8e44ad", "ஆங்கிலம்": "#fd79a8", "புலமைப்பரிசில்": "#f1c40f" };
+
+    // பக்கம் ஆரம்பிக்கும்போது இயங்கும்
+    async function loadQuiz() {
+        // 1. வரலாற்றை திரையில் காட்டுதல்
+        renderHistoryOnly();
+        
+        // 2. கடைசியாகப் பெற்ற புள்ளியை திரையில் நிலைநிறுத்துதல்
+        let history = JSON.parse(localStorage.getItem('quiz_history')) || [];
+        if (history.length > 0) {
+            const lastGame = history[history.length - 1];
+            document.getElementById('result-display').style.display = 'block';
+            document.getElementById('final-score-text').innerText = `${lastGame.score} / ${lastGame.total}`;
+        }
+
+        // 3. வினாக்களை Supabase இலிருந்து பெறுதல்
+        const { data } = await _supabase.from('questions').select('*').order('order_index', { ascending: true });
+        if (data && data.length > 0) {
+            quizData = data;
+            document.getElementById('display-subject').innerText = data[0].subject_name;
+            document.getElementById('display-grade').innerText = "தரம் " + data[0].grade;
+            document.getElementById('display-date').innerText = new Date().toLocaleDateString('ta-IN');
+            document.documentElement.style.setProperty('--theme-color', subjectColors[data[0].subject_name] || "#3498db");
+            document.getElementById('quiz-header').style.display = 'block';
+            document.getElementById('submit-btn').style.display = 'inline-block';
+            renderQuestions();
+        }
+    }
+
+    function renderQuestions() {
+        const container = document.getElementById('quiz-list-container');
+        container.innerHTML = '';
+        quizData.forEach((q, index) => {
+            const card = document.createElement('div');
+            card.className = 'question-card';
+            card.id = `q-card-${index}`;
+            let optionsHtml = '';
+            ['a', 'b', 'c', 'd', 'e'].forEach(label => {
+                if (q[label]) {
+                    const imgUrl = q[label + '_img'];
+                    optionsHtml += `<button class="option-btn" data-q="${index}" data-ans="${label}" onclick="selectOption(this, ${index}, '${label}')">${imgUrl ? `<img src="${imgUrl}">` : ''} <span>${q[label]}</span></button>`;
+                }
+            });
+            card.innerHTML = `<div class="question-header"><div class="question-text"><b>${index+1}.</b> ${q.q_text}</div>${q.q_image ? `<img src="${q.q_image}" class="q-image-main">` : ''}</div><div class="options-wrapper"><div class="options-grid">${optionsHtml}</div>${q.options_image ? `<div class="common-img-box"><img src="${q.options_image}"></div>` : ''}</div>`;
+            container.appendChild(card);
+        });
+    }
+
+    function selectOption(btn, qIdx, label) {
+        document.getElementById(`q-card-${qIdx}`).classList.remove('unanswered');
+        document.querySelectorAll(`button[data-q="${qIdx}"]`).forEach(s => s.classList.remove('selected'));
+        btn.classList.add('selected');
+        userAnswers[qIdx] = label;
+    }
+
+    function evaluateQuiz() {
+        let firstUnanswered = null;
+        quizData.forEach((_, index) => {
+            const card = document.getElementById(`q-card-${index}`);
+            if (!userAnswers[index]) {
+                card.classList.add('unanswered');
+                if (firstUnanswered === null) firstUnanswered = card;
+            } else {
+                card.classList.remove('unanswered');
+            }
+        });
+
+        if (firstUnanswered) {
+            firstUnanswered.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return;
+        }
+
+        let score = 0;
+        quizData.forEach((q, index) => {
+            const correct = q.correct_ans;
+            const userChoice = userAnswers[index];
+            document.querySelectorAll(`button[data-q="${index}"]`).forEach(btn => {
+                btn.style.pointerEvents = 'none';
+                if (btn.getAttribute('data-ans') === correct) btn.classList.add('correct-ans');
+                if (userChoice === btn.getAttribute('data-ans') && userChoice !== correct) btn.classList.add('wrong-ans');
+            });
+            if (userChoice === correct) score++;
+        });
+
+        document.getElementById('result-display').style.display = 'block';
+        document.getElementById('final-score-text').innerText = `${score} / ${quizData.length}`;
+        document.getElementById('submit-btn').style.display = 'none';
+
+        saveAndRenderHistory(score, quizData.length);
+        document.getElementById('result-display').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function saveAndRenderHistory(newScore, total) {
+        let history = JSON.parse(localStorage.getItem('quiz_history')) || [];
+        history.push({ score: newScore, total: total });
+        localStorage.setItem('quiz_history', JSON.stringify(history));
+        renderHistoryOnly();
+    }
+
+    function renderHistoryOnly() {
+        let history = JSON.parse(localStorage.getItem('quiz_history')) || [];
+        if (history.length === 0) return;
+
+        document.getElementById('result-display').style.display = 'block';
+        const container = document.getElementById('history-list-container');
+        container.innerHTML = '';
+        
+        // கடைசி 5 ஆட்டங்களை மட்டும் தலைகீழாக (சமீபத்தியது முதலில்) காட்டுதல்
+        [...history].reverse().slice(0, 5).forEach((item, index) => {
+            const div = document.createElement('div');
+            div.className = 'score-item';
+            const displayIndex = history.length - index;
+            div.innerHTML = `<span>ஆட்டம் ${displayIndex}</span> <span>${item.score} / ${item.total}</span>`;
+            container.appendChild(div);
+        });
+    }
+
+    function resetQuiz() {
+        userAnswers = {};
+        document.getElementById('submit-btn').style.display = 'inline-block';
+        renderQuestions();
+        window.scrollTo({top: 0, behavior: 'smooth'});
+    }
+
+    loadQuiz();
+</script>
+</body>
+</html>
